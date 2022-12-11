@@ -1,22 +1,30 @@
-import os, re, json
+import PySimpleGUI as sg
 
-def personagem():
-    arquivo_personagem = [char.name for char in os.scandir('Chars') if char.is_file()]
+radio_tag = ["Next", "PREV"]
 
-    nome_pers = [re.sub('.json$', '', nome) for nome in arquivo_personagem]
+sg.theme("DarkBlue3")
+sg.set_options(font=("Courier New", 11))
 
-    for char in arquivo_personagem:
-        with open(f'Chars/{char}', 'r') as f:
-            info = json.load(f)
-        
-        for key, value in info.items():
-            yield f'{key}: {value}'
+cols = [
+    [[sg.Text("Next element is sg.Input", size=(28, 1)), sg.Input()]],
+    [[sg.Input(), sg.Text("Previous element is sg.Input", size=(28, 1))]],
+]
 
-print("Files and Directories in Chars':")
+layout =[
+    [sg.Radio(text, "position", default=(i==0), enable_events=True, key=text)
+        for i, text in enumerate(radio_tag)],
+    [sg.Column(cols[i], visible=(i==0), key=f'COL {i}') for i in range(2)],
+]
 
-chars = personagem()
+window = sg.Window("Title", layout, finalize=True)
 
-for x in chars:
-    print(x)
+while True:
 
+    event, values = window.read()
+    if event == sg.WINDOW_CLOSED:
+        break
+    elif event in radio_tag:
+        for i in range(2):
+            window[f'COL {i}'].update(visible=values[radio_tag[i]])
 
+window.close()

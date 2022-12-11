@@ -1,7 +1,22 @@
+# ----------------------------------------------
+# Coding: utf-8
+# Project: RPG Combat Simulator
+# File: char_creator.py
+# Author: RicaldoniDev
+# Created on 10/12/2022 - it's dd/mm/yyyy
+# ----------------------------------------------
+
 import json, re, random, PySimpleGUI as sg
 
 def remove_white_space(text):
     return re.sub('\s', '-', text)
+
+def checar_escudo(arma):
+    # Se a arma dele tiver a propriedade 2-hand, ele não será capaz de usar um escudo
+    if '2-hand' not in arma['props']:
+        return True
+    else:
+        sg.popup('O personagem não pode usar uma arma de 2 mãos com um escudo', title='Erro!')
 
 
 def principal():
@@ -23,7 +38,7 @@ def principal():
         [sg.Text('Nome do personagem:', size=(16,1)), sg.InputText(key='-NAME-')],
         [sg.Text('Arma:', size=(16,1)), sg.InputCombo((weapon_list), key='-WPN-', readonly=True)],
         [sg.Text('Armadura:', size=(16,1)), sg.InputCombo((armor_list), key='-ARM-', readonly=True)],
-        [sg.Text('O personagem tem escudo? ', size=(21,1)), sg.Radio('Sim', 'shield', key='-SIM-'), sg.Radio('Não', 'shield', key='-NAO-')],
+        [sg.Text('O personagem tem escudo? ', size=(21,1)), sg.Radio('Sim', 'shield', key='-SIM-'), sg.Radio('Não', 'shield', k='-NAO-')],
         [sg.Button('Criar personagem'), sg.Button('Fechar')]], modal=True)
     # ----------------------------------------------
     
@@ -33,27 +48,28 @@ def principal():
 
         # Se clicar no 'X' ou em 'Sair' sai do loop e fecha a janela
         if event == sg.WIN_CLOSED or event == 'Fechar':
+            window.close()
             break
         # ------------------------------------------
 
         if event == 'Criar personagem':
+            shield = None
             # Checar se o personagem tem um escudo
             if values['-SIM-']:
-
-                # Se a arma dele tiver a propriedade 2-hand, ele não será capaz de usar um escudo
-                if '2-hand' in WEAPONS[values['-WPN-']]['props']:
-                    sg.popup('Erro!', 'Você não pode usar um escudo com uma arma de 2 mãos')
-                    continue
-                else:
-                    shield = True
-                # -------------------------------
-            else:
+                shield = checar_escudo(WEAPONS[values['-WPN-']])
+            else: 
                 shield = False
+
+            if shield == None: continue
+
+            if values['-NAME-'] == '' or values['-WPN-'] == '' or values['-ARM-'] == '':
+                sg.Popup('Preencha todos os campos', title='Erro!')
+                continue
+
             atributos(values['-NAME-'],values['-WPN-'],values['-ARM-'], shield)
-        window.close()
+            window.close()
 
-
-def atributos(name:str, wpn:str, arm:str, shield:bool):
+def atributos(name:str, wpn:str, arm:str, shield:bool = False):
     sg.theme('Dark Amber')
 
 
@@ -87,6 +103,7 @@ def atributos(name:str, wpn:str, arm:str, shield:bool):
         event, _ = janela.read()
 
         if event == sg.WIN_CLOSED or event == 'Cancelar':
+            janela.close()
             break
 
         # Para evitar o uso de 3 ifs e elifs o programa procura dentre esta lista,
@@ -136,13 +153,13 @@ def atributos(name:str, wpn:str, arm:str, shield:bool):
                 'shield' : shield,
                 'strength': int(janela['-STR_PT-'].get()),
                 'dexterity': int(janela['-DEX_PT-'].get()),
-                'HP' : 30 + int(janela['-HP_PT-'].get()),
+                'HP' : 50 + int(janela['-HP_PT-'].get()),
             }
             
             try:
                 with open(f'Chars/{name}.json', 'x') as f:
                    json.dump(dados, f)
-                   break
+                   janela.close()
             except FileExistsError:
                 sg.popup('Erro!', 'Esse personagem já existe')
             janela.close()
